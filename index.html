@@ -3,77 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unknown Modz | Key System</title>
+    <title>Unknown Modz | Secure Login</title>
     <style>
         :root { --accent: #00ff00; --bg: #0a0a0a; --card: #151515; }
-        body { background-color: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #222; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
-        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
-        p { color: #888; font-size: 13px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #000; color: white; text-align: center; box-sizing: border-box; }
-        #result { background: #000; padding: 15px; border-radius: 10px; border: 1px dashed var(--accent); margin-top: 20px; display: none; }
-        .key-text { font-family: monospace; color: var(--accent); font-size: 18px; font-weight: bold; }
-        button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        button:hover { transform: scale(1.02); background: #00cc00; }
+        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #000; color: white; text-align: center; box-sizing: border-box; font-size: 16px; }
+        .error-link { color: #ff4444; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; }
+        #result { background: #000; padding: 20px; border-radius: 12px; border: 1px dashed var(--accent); margin-top: 20px; display: none; }
+        .key-text { font-family: monospace; color: var(--accent); font-size: 18px; font-weight: bold; word-break: break-all; }
+        button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px; }
+        button:hover { background: #00cc00; transform: scale(1.02); }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="main">
         <h1>Unknown Modz</h1>
-        
-        <div id="setupArea">
-            <p id="instruction">Click below to generate your key.</p>
-            <div id="manualEntry" style="display:none;">
-                <p style="color: #ffaa00;">Session ID lost. Please enter your UserID:</p>
-                <input type="number" id="userIdManual" placeholder="Enter Roblox UserID">
-            </div>
-            <button onclick="checkAndGenerate()">Get Key</button>
+        <div id="authArea">
+            <p style="color:#888; font-size: 13px;">Enter your Roblox UserID to lock this session.</p>
+            <input type="number" id="uidIn" placeholder="Enter Roblox UserID">
+            <button onclick="handleAuth()">Generate 24h Key</button>
+            <span class="error-link" onclick="wrongId()">Did you enter the wrong ID?</span>
         </div>
 
         <div id="result">
-            <div style="font-size: 10px; color: #888; margin-bottom: 5px;">YOUR 24H KEY:</div>
-            <div id="keyValue" class="key-text"></div>
-            <p style="font-size: 10px; margin-top: 10px;">Copy and paste this into the script.</p>
+            <div style="font-size: 10px; color: #555; margin-bottom: 8px;">YOUR UNIQUE KEY:</div>
+            <div id="keyOut" class="key-text"></div>
+            <p style="font-size: 10px; color: #888; margin-top: 15px;">Paste this exactly into the script loader.</p>
         </div>
     </div>
 
     <script>
-        // Check if ID is in the URL automatically
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoId = urlParams.get('id');
+        function handleAuth() {
+            const inputId = document.getElementById('uidIn').value;
+            if (!inputId || inputId.length < 4) return alert("Enter a valid UserID");
 
-        // If no ID in URL, show the manual input box
-        if (!autoId) {
-            document.getElementById('manualEntry').style.display = "block";
-            document.getElementById('instruction').style.display = "none";
-        }
+            const now = Date.now();
+            const lockedId = localStorage.getItem("UM_LockedID");
+            const lockedTime = localStorage.getItem("UM_LockTime");
 
-        function checkAndGenerate() {
-            let userId = autoId || document.getElementById('userIdManual').value;
+            // Reset lock after 24 hours
+            if (lockedTime && (now - lockedTime > 86400000)) {
+                localStorage.removeItem("UM_LockedID");
+                localStorage.removeItem("UM_LockTime");
+            }
 
-            if (!userId || userId.length < 4) {
-                alert("Please enter a valid Roblox UserID!");
+            // Lock first ID
+            if (!localStorage.getItem("UM_LockedID")) {
+                localStorage.setItem("UM_LockedID", inputId);
+                localStorage.setItem("UM_LockTime", now);
+            }
+
+            // Check match
+            if (inputId !== localStorage.getItem("UM_LockedID")) {
+                alert("ACCESS DENIED: Device locked to ID " + localStorage.getItem("UM_LockedID"));
                 return;
             }
 
-            const dayStamp = Math.floor(Date.now() / 86400000);
-            let seed = parseInt(userId) + dayStamp;
+            generate(inputId);
+        }
 
+        function generate(uid) {
+            const day = Math.floor(Date.now() / 86400000);
+            let seed = parseInt(uid) + day;
+            
             function seededRandom() {
-                var x = Math.sin(seed++) * 10000;
-                return x - Math.floor(x);
+                var x = Math.sin(seed) * 10000;
+                seed++;
+                return Math.abs(x - Math.floor(x));
             }
 
-            let parts = [];
+            let p = [];
             for (let i = 0; i < 4; i++) {
-                let seg = "";
-                for (let j = 0; j < 4; j++) { seg += Math.floor(seededRandom() * 10); }
-                parts.push(seg);
+                let s = "";
+                for (let j = 0; j < 4; j++) { s += Math.floor(seededRandom() * 10); }
+                p.push(s);
             }
 
-            document.getElementById('keyValue').innerText = "Unknown-Modz-" + parts.join("-");
+            document.getElementById('keyOut').innerText = "Unknown-Modz-" + p.join("-");
             document.getElementById('result').style.display = "block";
-            document.getElementById('setupArea').style.display = "none";
+            document.getElementById('authArea').style.display = "none";
+        }
+
+        function wrongId() {
+            alert("Security Notice: Once an ID is locked, you must wait 24 hours to change it. This prevents key sharing.");
         }
     </script>
 </body>
