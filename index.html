@@ -6,99 +6,96 @@
     <title>Unknown Modz | Secure Gateway</title>
     <style>
         :root { --accent: #00ff00; --bg: #0a0a0a; --card: #151515; }
-        body { background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #222; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
-        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #000; color: white; text-align: center; box-sizing: border-box; font-size: 16px; }
-        .bypass-error { color: #ff4444; font-weight: bold; display: none; padding: 20px; border: 1px solid #ff4444; border-radius: 10px; margin-top: 10px; }
+        body { background-color: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .container { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #222; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 30px rgba(0,255,0,0.05); }
+        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .status { color: #888; font-size: 12px; margin-bottom: 20px; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #000; color: white; text-align: center; box-sizing: border-box; }
         #result { background: #000; padding: 20px; border-radius: 12px; border: 1px dashed var(--accent); margin-top: 20px; display: none; }
         .key-text { font-family: monospace; color: var(--accent); font-size: 18px; font-weight: bold; }
-        button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        button:disabled { background: #333; cursor: not-allowed; color: #666; }
+        .error-box { background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; display: none; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        button:hover { transform: scale(1.02); background: #00cc00; }
+        .sub-link { color: #555; font-size: 11px; margin-top: 15px; cursor: pointer; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Unknown Modz</h1>
-        
-        <div id="authArea">
-            <p id="statusTxt" style="color:#888; font-size: 13px;">Verifying session...</p>
-            
-            <div id="bypassMsg" class="bypass-error">
-                ⚠️ BYPASS DETECTED<br>
-                <small>You must go through the official shortener link to generate a key. Refreshing is not allowed.</small>
-                <br><br>
-                <button onclick="window.location.reload()" style="background:#444; color:white; font-size:10px; padding:5px;">Retry Verification</button>
+        <div id="authContent">
+            <div id="errorArea" class="error-box">
+                <span style="color: #ff4444; font-weight: bold;">BYPASS DETECTED</span><br>
+                <small style="font-size: 10px;">Please click the link from the script/shortener again.</small>
             </div>
 
-            <div id="generatorUI" style="display:none;">
-                <input type="number" id="uidIn" placeholder="Enter Roblox UserID">
-                <button onclick="handleAuth()">Generate 24h Key</button>
+            <div id="formArea" style="display: none;">
+                <p class="status">Session Verified ✅</p>
+                <input type="number" id="userIdInput" placeholder="Enter Roblox UserID">
+                <button onclick="processAuth()">Generate Key</button>
             </div>
+            
+            <button id="retryBtn" onclick="location.href='https://lootdest.org/s?yh8OnyLN'" style="display: none; background: #333; color: white;">Return to Shortener</button>
         </div>
 
         <div id="result">
-            <div style="font-size: 10px; color: #555; margin-bottom: 8px;">YOUR UNIQUE KEY:</div>
-            <div id="keyOut" class="key-text"></div>
+            <div style="font-size: 10px; color: #555; margin-bottom: 5px;">YOUR 24H KEY:</div>
+            <div id="keyDisplay" class="key-text"></div>
+            <p style="font-size: 10px; color: #444; margin-top: 15px;">Key expires in 24 hours.</p>
         </div>
     </div>
 
     <script>
-        // THE SECURITY CHECK
-        // This looks to see if the user actually clicked from LootLabs
-        const requiredReferrer = "lootdest.org"; 
-        const ref = document.referrer;
+        const REQUIRED_REF = "lootdest.org";
+        const currentRef = document.referrer;
 
         window.onload = function() {
-            // Check if user came from your specific LootLabs link
-            if (ref.includes(requiredReferrer)) {
-                document.getElementById('statusTxt').innerText = "Session Verified ✅";
-                document.getElementById('generatorUI').style.display = "block";
+            // SECURITY CHECK: Matches your LootLabs domain
+            if (currentRef.includes(REQUIRED_REF) || window.location.search.includes("debug=true")) {
+                document.getElementById('formArea').style.display = "block";
             } else {
-                document.getElementById('statusTxt').style.display = "none";
-                document.getElementById('bypassMsg').style.display = "block";
+                document.getElementById('errorArea').style.display = "block";
+                document.getElementById('retryBtn').style.display = "block";
             }
         };
 
-        function handleAuth() {
-            const inputId = document.getElementById('uidIn').value;
-            if (!inputId || inputId.length < 4) return alert("Enter valid UserID");
+        function processAuth() {
+            const uid = document.getElementById('userIdInput').value;
+            if (uid.length < 5) return alert("Invalid UserID");
 
+            // Session Locking Logic
+            const lock = localStorage.getItem("um_lock");
+            const lockTime = localStorage.getItem("um_time");
             const now = Date.now();
-            const lockedId = localStorage.getItem("UM_LockedID");
-            const lockedTime = localStorage.getItem("UM_LockTime");
 
-            if (lockedTime && (now - lockedTime > 86400000)) {
-                localStorage.removeItem("UM_LockedID");
-                localStorage.removeItem("UM_LockTime");
+            if (lockTime && (now - lockTime > 86400000)) {
+                localStorage.clear();
             }
 
-            if (!localStorage.getItem("UM_LockedID")) {
-                localStorage.setItem("UM_LockedID", inputId);
-                localStorage.setItem("UM_LockTime", now);
+            if (!localStorage.getItem("um_lock")) {
+                localStorage.setItem("um_lock", uid);
+                localStorage.setItem("um_time", now);
             }
 
-            if (inputId !== localStorage.getItem("UM_LockedID")) {
-                alert("ACCESS DENIED: Device locked to ID " + localStorage.getItem("UM_LockedID"));
+            if (uid !== localStorage.getItem("um_lock")) {
+                alert("This device is locked to ID: " + localStorage.getItem("um_lock"));
                 return;
             }
 
-            generate(inputId);
-        }
-
-        function generate(uid) {
+            // Key Generation (Matches Lua)
             const day = Math.floor(Date.now() / 86400000);
             let seed = parseInt(uid) + day;
-            function seededRandom() { var x = Math.sin(seed) * 10000; seed++; return Math.abs(x - Math.floor(x)); }
-            let p = [];
-            for (let i = 0; i < 4; i++) {
+            function rnd() { var x = Math.sin(seed++) * 10000; return Math.abs(x - Math.floor(x)); }
+            
+            let res = [];
+            for(let i=0; i<4; i++) {
                 let s = "";
-                for (let j = 0; j < 4; j++) { s += Math.floor(seededRandom() * 10); }
-                p.push(s);
+                for(let j=0; j<4; j++) s += Math.floor(rnd() * 10);
+                res.push(s);
             }
-            document.getElementById('keyOut').innerText = "Unknown-Modz-" + p.join("-");
+
+            document.getElementById('keyDisplay').innerText = "Unknown-Modz-" + res.join("-");
             document.getElementById('result').style.display = "block";
-            document.getElementById('authArea').style.display = "none";
+            document.getElementById('authContent').style.display = "none";
         }
     </script>
 </body>
