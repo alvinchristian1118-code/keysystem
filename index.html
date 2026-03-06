@@ -8,50 +8,72 @@
         :root { --accent: #00ff00; --bg: #0a0a0a; --card: #151515; }
         body { background-color: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background: var(--card); padding: 40px; border-radius: 20px; border: 1px solid #222; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
-        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin: 0; }
-        p { color: #888; font-size: 14px; margin-bottom: 25px; }
+        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        p { color: #888; font-size: 13px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #000; color: white; text-align: center; box-sizing: border-box; }
         #result { background: #000; padding: 15px; border-radius: 10px; border: 1px dashed var(--accent); margin-top: 20px; display: none; }
         .key-text { font-family: monospace; color: var(--accent); font-size: 18px; font-weight: bold; }
-        .error { color: #ff4444; font-weight: bold; display: none; padding: 20px; }
         button { width: 100%; padding: 15px; background: var(--accent); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        button:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(0,255,0,0.3); }
+        button:hover { transform: scale(1.02); background: #00cc00; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Unknown Modz</h1>
-        <div id="content">
-            <p>Verification successful! Click below to generate your unique 24h key.</p>
-            <button onclick="generateKey()">Generate Key</button>
+        
+        <div id="setupArea">
+            <p id="instruction">Click below to generate your key.</p>
+            <div id="manualEntry" style="display:none;">
+                <p style="color: #ffaa00;">Session ID lost. Please enter your UserID:</p>
+                <input type="number" id="userIdManual" placeholder="Enter Roblox UserID">
+            </div>
+            <button onclick="checkAndGenerate()">Get Key</button>
         </div>
-        <div id="errorBox" class="error">⚠️ BYPASS DETECTED<br><small>Please use the link from the script.</small></div>
+
         <div id="result">
             <div style="font-size: 10px; color: #888; margin-bottom: 5px;">YOUR 24H KEY:</div>
             <div id="keyValue" class="key-text"></div>
-            <p style="font-size: 10px; margin-top: 10px;">Copy and paste this into the loader.</p>
+            <p style="font-size: 10px; margin-top: 10px;">Copy and paste this into the script.</p>
         </div>
     </div>
+
     <script>
-        function generateKey() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get('id'); 
-            if (!userId) {
-                document.getElementById('content').style.display = "none";
-                document.getElementById('errorBox').style.display = "block";
+        // Check if ID is in the URL automatically
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoId = urlParams.get('id');
+
+        // If no ID in URL, show the manual input box
+        if (!autoId) {
+            document.getElementById('manualEntry').style.display = "block";
+            document.getElementById('instruction').style.display = "none";
+        }
+
+        function checkAndGenerate() {
+            let userId = autoId || document.getElementById('userIdManual').value;
+
+            if (!userId || userId.length < 4) {
+                alert("Please enter a valid Roblox UserID!");
                 return;
             }
+
             const dayStamp = Math.floor(Date.now() / 86400000);
             let seed = parseInt(userId) + dayStamp;
-            function seededRandom() { var x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+
+            function seededRandom() {
+                var x = Math.sin(seed++) * 10000;
+                return x - Math.floor(x);
+            }
+
             let parts = [];
             for (let i = 0; i < 4; i++) {
                 let seg = "";
                 for (let j = 0; j < 4; j++) { seg += Math.floor(seededRandom() * 10); }
                 parts.push(seg);
             }
+
             document.getElementById('keyValue').innerText = "Unknown-Modz-" + parts.join("-");
             document.getElementById('result').style.display = "block";
-            document.getElementById('content').style.display = "none";
+            document.getElementById('setupArea').style.display = "none";
         }
     </script>
 </body>
